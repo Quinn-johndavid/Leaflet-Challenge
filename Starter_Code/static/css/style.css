@@ -30,11 +30,14 @@ html {
 }
 
 
-
-
 h2 {
   color: blue;
 }
 
+h3 {
+  color: red;
+}
 
-
+p {
+  color: black;
+}

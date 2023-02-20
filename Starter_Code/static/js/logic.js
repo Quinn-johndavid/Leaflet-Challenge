@@ -1,4 +1,4 @@
-// Define function to create map layers and display them
+// Define the map creation function 
 function createMap(eqs, plates) {
 
     // Base map layer
@@ -7,7 +7,7 @@ function createMap(eqs, plates) {
     });
 
     // Topographic map layer
-    var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    var topographic = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
         attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
     });
 
@@ -17,26 +17,26 @@ function createMap(eqs, plates) {
     })
 
     // Satalite map layer
-    var sat = L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+    var satalite = L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
         attribution: '<a href="https://yandex.ru" target="_blank">Yandex</a>'
       });
 
     // Map layers
     var baseMaps = {
         "<span style='color: blue'>Street Map</span>": base,
-        "<span style='color: blue'>Topographical Map</span>": topo,
+        "<span style='color: blue'>Topographical Map</span>": topographic,
         "<span style='color: blue'>Watercolor Map</span>": watercolor,
-        "<span style='color: blue'>Satalite Map</span>": sat
+        "<span style='color: blue'>Satalite Map</span>": satalite
     };    
 
-    // Overlays
+    // Overlays 
     var overlayMaps = {
-        "<span style='color: green'>Tectonic Plates</span>": plates,
-        "<span style='color: yellow'>All Earthquakes</span>": eqs
+        "<span style='color: blue'>Tectonic Plates</span>": plates,
+        "<span style='color: red'>All Earthquakes</span>": eqs
     };
 
     // Map object
-    var myMap = L.map("map", {
+    var theMap = L.map("map", {
         center: [0, 12],
         zoom: 3,
         layers: [base, eqs]
@@ -45,14 +45,14 @@ function createMap(eqs, plates) {
     // Add layer control panel to map
     L.control.layers(baseMaps, overlayMaps, {
         collapsed: false
-    }).addTo(myMap);
+    }).addTo(theMap);
 
 
 
     // Create legend object
     var legend = L.control({position: 'bottomright'});
 
-    // Create the labels for the legend
+    // Create labels for the legend
     legend.onAdd = function(){
 
         // Create the legend div
@@ -60,11 +60,10 @@ function createMap(eqs, plates) {
             levels = [0, 10, 30, 50, 100, 200, 500],
             labels = [];
 
-        // Add legend title
+        // create legend title
         div.innerHTML += '<center><h2>Earthquake<br>Depth</h2><hr></center>'
         
-        // Add a new colored entry to the legend for each item
-        // in the 'levels' array & return the div when complete
+        // Adds a new colored entry to the legend for each item
         for (var i = 0; i < levels.length; i++) {
             div.innerHTML +=
                 '<i style="background:' + getColor(levels[i] + 1) + '"></i> ' +
@@ -73,15 +72,15 @@ function createMap(eqs, plates) {
         return div;
     };
 
-    // Add the legend to the map
-    legend.addTo(myMap);
+    // add legend
+    legend.addTo(theMap);
 
 };
 
 // Define function to assign colors based on earthquake depth
 function getColor(depth){
     
-    // Deeper depths get darker colors
+    // Deeper depths have darker colors
     if (depth > 500){
         return '#b10026'
     } else if (depth > 200){
@@ -99,28 +98,28 @@ function getColor(depth){
     };
 };
 
-// Define function to create markers based on JSON response objects
+// function to create markers
 function createMarkers(response1, response2) {
 
-    // Define function to draw circle markers
+    // function to draw circle markers
     function ptToLayer(feature, latlng) {
         return L.circleMarker(latlng, {
-            color: 'olive',
+            color: 'green',
             weight: 1,
             fillColor: getColor(feature.geometry.coordinates[2]),
-            fillOpacity: 0.8,
+            fillOpacity: 0.6,
             radius: feature.properties.mag ** 1.5,
         });
     };
 
-    // Define function to attach popup messages
+    // function to allow mousehovers
     function onEach(feature, layer) {
         layer.bindPopup(`<h2>${feature.properties.place}</h2><h3>
             Magnitude: ${feature.properties.mag} - 
             Depth: ${feature.geometry.coordinates[2]}km</h3><hr>
             <p>${new Date(feature.properties.time)}</p>`);
 
-        // Open popups on mouse hover 
+        // mousehover action
         layer.on('mouseover', function(d){
             this.openPopup();
         });
@@ -129,14 +128,14 @@ function createMarkers(response1, response2) {
         });
     };
 
-    // Create geoJSON layer for earthquake data
+    // Create geoJSON layer with earthquake data
     var gJsonLayer = L.geoJSON(response1.features, {
         onEachFeature: onEach,
         pointToLayer: ptToLayer
     });
 
-    // Create geoJSON layer for tectonic plates
-    var gJsonLayer2 = L.geoJSON(response2.features, {
+    // Create layer for tectonic plates in blie
+    var tectonicLayer = L.geoJSON(response2.features, {
         style: {
             color: 'blue',
             weight: 2
@@ -144,19 +143,18 @@ function createMarkers(response1, response2) {
     });
 
 
-    // Create map with geoJSON layers & timeline object
-    createMap(gJsonLayer, gJsonLayer2);
+    // instantiate the map with the created layers
+    createMap(gJsonLayer, tectonicLayer);
 };
 
 
 // URL to get Earthquake data from USGS.gov site
-// Getting info on earthquakes 1.0 and above from the last month
-var quakeUrl = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_month.geojson';
+var earthquakeUrl = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_month.geojson';
 
 // URL to get tectonic plate data from Hugo Ahlenius, Nordpil and Peter Bird GitHub page
 var plateUrl = 'https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json';
 
-// DataPromise to get geoJSON data from urls, then call functions to create the markers & map
-Promise.all([d3.json(quakeUrl), d3.json(plateUrl)]).then(function([data1, data2]){
+// DataPromise with 
+Promise.all([d3.json(earthquakeUrl), d3.json(plateUrl)]).then(function([data1, data2]){
     createMarkers(data1, data2);
 });
